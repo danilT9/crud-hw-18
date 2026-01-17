@@ -735,11 +735,15 @@ const courseUpInput = document.getElementById("course-u");
 const skillsUpInput = document.getElementById("skills-u");
 const emailUpInput = document.getElementById("email-u");
 const isEnrolledUpInput = document.getElementById("isEnrolled-u");
-// Функція для отримання всіх студентів
-function getStudents() {
-    return (0, _getDataApiJs.getDataApi)();
+async function getStudents() {
+    try {
+        const students = await (0, _getDataApiJs.getDataApi)();
+        return students;
+    } catch (error) {
+        console.log("getStudents:", error.message);
+        return [];
+    }
 }
-// Функція для відображення студентів у таблиці
 function renderStudents(students) {
     studentsTableBody.innerHTML = "";
     const layout = students.map((student)=>`<tr>
@@ -762,51 +766,55 @@ getStudentsBtn.addEventListener("click", async (e)=>{
     const students = await getStudents();
     renderStudents(students);
 });
-// Функція для додавання нового студента
-function addStudent() {
-    return (0, _getDataApiJs.getDataApi)().then((students)=>{
-        let isEnrolled = false;
-        if (isEnrolledCheckBox.checked) isEnrolled = true;
-        else isEnrolled = false;
-        const e = {
+async function addStudent() {
+    try {
+        const students = await (0, _getDataApiJs.getDataApi)();
+        const newStudent = {
             id: String(students.length + 1),
             name: nameInput.value,
             age: Number(ageInput.value),
             course: courseInput.value,
             skills: skillsInput.value.split(","),
             email: emailInput.value,
-            isEnrolled
+            isEnrolled: isEnrolledCheckBox.checked
         };
-        return (0, _addDataApiJs.addDataApi)(e).then(()=>{
-            renderStudents(students);
-            nameInput.value = "";
-            ageInput.value = "";
-            courseInput.value = "";
-            skillsInput.value = "";
-            emailInput.value = "";
-            isEnrolledCheckBox.checked = false;
-        });
-    });
+        await (0, _addDataApiJs.addDataApi)(newStudent);
+        nameInput.value = "";
+        ageInput.value = "";
+        courseInput.value = "";
+        skillsInput.value = "";
+        emailInput.value = "";
+        isEnrolledCheckBox.checked = false;
+        const updatedStudents = await getStudents();
+        renderStudents(updatedStudents);
+    } catch (error) {
+        console.log("addStudent:", error.message);
+    }
 }
 addStudentForm.addEventListener("submit", (e)=>{
     e.preventDefault();
     addStudent();
 });
-// Функція для оновлення студента
 async function updateStudent(id) {
-    updateModalBackground.classList.toggle("show");
-    const students = await getStudents();
-    const foundStudent = students.find((s)=>s.id === id);
-    nameUpInput.value = foundStudent.name;
-    ageUpInput.value = Number(foundStudent.age);
-    courseUpInput.value = foundStudent.course;
-    skillsUpInput.value = foundStudent.skills.join(",");
-    emailUpInput.value = foundStudent.email;
-    isEnrolledUpInput.checked = foundStudent.isEnrolled;
-    updateStudentForm.addEventListener("submit", async (e)=>{
-        e.preventDefault();
+    try {
+        updateModalBackground.classList.toggle("show");
+        const students = await getStudents();
+        const foundStudent = students.find((s)=>s.id === id);
+        nameUpInput.value = foundStudent.name;
+        ageUpInput.value = foundStudent.age;
+        courseUpInput.value = foundStudent.course;
+        skillsUpInput.value = foundStudent.skills.join(",");
+        emailUpInput.value = foundStudent.email;
+        isEnrolledUpInput.checked = foundStudent.isEnrolled;
+    } catch (error) {
+        console.log("updateStudent:", error.message);
+    }
+}
+updateStudentForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    try {
+        const id = updateStudentForm.dataset.updateId;
         const newInfo = {
-            id: foundStudent.id,
             name: nameUpInput.value,
             age: Number(ageUpInput.value),
             course: courseUpInput.value,
@@ -814,19 +822,32 @@ async function updateStudent(id) {
             email: emailUpInput.value,
             isEnrolled: isEnrolledUpInput.checked
         };
+        await (0, _updateDataApiJs.updateDataApi)(id, newInfo);
         updateModalBackground.classList.toggle("show");
-        return await (0, _updateDataApiJs.updateDataApi)(id, newInfo);
-    });
-}
-// Функція для видалення студента
-function deleteStudent(id) {
-    return (0, _deleteDataApiJs.deleteDataApi)(id);
+        const updatedStudents = await getStudents();
+        renderStudents(updatedStudents);
+        updateStudentForm.removeAttribute("data-update-id");
+    } catch (error) {
+        console.log("updateStudentForm form:", error.message);
+    }
+});
+async function deleteStudent(id) {
+    try {
+        await (0, _deleteDataApiJs.deleteDataApi)(id);
+        const updatedStudents = await getStudents();
+        renderStudents(updatedStudents);
+    } catch (error) {
+        console.log("deleteStudent:", error.message);
+    }
 }
 studentsTableBody.addEventListener("click", async (e)=>{
     e.preventDefault();
     if (e.target.tagName === "BUTTON") {
         if (e.target.dataset.deleteId) deleteStudent(e.target.dataset.deleteId);
-        if (e.target.dataset.updateId) updateStudent(e.target.dataset.updateId);
+        if (e.target.dataset.updateId) {
+            updateStudentForm.dataset.updateId = e.target.dataset.updateId;
+            updateStudent(e.target.dataset.updateId);
+        }
     }
 });
 document.getElementById("closeModal").addEventListener("click", (e)=>{
@@ -839,7 +860,14 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "getDataApi", ()=>getDataApi);
 const getDataApi = async ()=>{
-    return await fetch("http://localhost:3000/students").then((res)=>res.json());
+    try {
+        const res = await fetch("http://localhost:3000/students");
+        const students = await res.json();
+        return students;
+    } catch (error) {
+        console.log("getDataApi:", error.message);
+        return [];
+    }
 };
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"jnFvT"}],"jnFvT":[function(require,module,exports,__globalThis) {
@@ -877,13 +905,19 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "addDataApi", ()=>addDataApi);
 const addDataApi = async (data)=>{
-    return await fetch("http://localhost:3000/students", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-            "Content-Type": "application/json; charset=UTF-8"
-        }
-    }).then((res)=>res.json());
+    try {
+        const res = await fetch("http://localhost:3000/students", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json; charset=UTF-8"
+            },
+            body: JSON.stringify(data)
+        });
+        const student = await res.json();
+        return student;
+    } catch (error) {
+        console.log("addDataApi:", error.message);
+    }
 };
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"jnFvT"}],"e78Nl":[function(require,module,exports,__globalThis) {
@@ -891,13 +925,19 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "updateDataApi", ()=>updateDataApi);
 const updateDataApi = async (id, data)=>{
-    return await fetch(`http://localhost:3000/students/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-        headers: {
-            "Content-Type": "application/json; charset=UTF-8"
-        }
-    }).then((res)=>res.json());
+    try {
+        const res = await fetch(`http://localhost:3000/students/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json; charset=UTF-8"
+            },
+            body: JSON.stringify(data)
+        });
+        const student = await res.json();
+        return student;
+    } catch (error) {
+        console.log("updateDataApi:", error.message);
+    }
 };
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"jnFvT"}],"f8PbZ":[function(require,module,exports,__globalThis) {
@@ -905,12 +945,18 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "deleteDataApi", ()=>deleteDataApi);
 const deleteDataApi = async (id)=>{
-    return await fetch(`http://localhost:3000/students/${id}`, {
-        method: "DELETE",
-        headers: {
-            "Content-Type": "application/json; charset=UTF-8"
-        }
-    }).then((res)=>res.json());
+    try {
+        const res = await fetch(`http://localhost:3000/students/${id}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json; charset=UTF-8"
+            }
+        });
+        const result = await res.json();
+        return result;
+    } catch (error) {
+        console.log("deleteDataApi:", error.message);
+    }
 };
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"jnFvT"}]},["5j6Kf","a0t4e"], "a0t4e", "parcelRequireacc4", {})

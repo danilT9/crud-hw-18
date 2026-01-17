@@ -21,12 +21,16 @@ const skillsUpInput = document.getElementById("skills-u");
 const emailUpInput = document.getElementById("email-u");
 const isEnrolledUpInput = document.getElementById("isEnrolled-u");
 
-// Функція для отримання всіх студентів
-function getStudents() {
-    return getDataApi();
-};
+async function getStudents() {
+    try {
+        const students = await getDataApi();
+        return students;
+    } catch (error) {
+        console.log("getStudents:", error.message);
+        return [];
+    }
+}
 
-// Функція для відображення студентів у таблиці
 function renderStudents(students) {
     studentsTableBody.innerHTML = "";
     const layout = students.map(student => 
@@ -53,35 +57,33 @@ getStudentsBtn.addEventListener("click", async e => {
     renderStudents(students);
 });
 
-// Функція для додавання нового студента
-function addStudent() {
-    return getDataApi().then(students => {
-        let isEnrolled = false;
-
-        if (isEnrolledCheckBox.checked) {
-            isEnrolled = true;
-        } else {
-            isEnrolled = false;
-        };
-        const e = {
+async function addStudent() {
+    try {
+        const students = await getDataApi();
+        const newStudent = {
             id: String(students.length + 1),
             name: nameInput.value,
             age: Number(ageInput.value),
             course: courseInput.value,
             skills: skillsInput.value.split(","),
             email: emailInput.value,
-            isEnrolled
+            isEnrolled: isEnrolledCheckBox.checked
         };
-        return addDataApi(e).then(() => {
-            renderStudents(students);
-            nameInput.value = "";
-            ageInput.value = "";
-            courseInput.value = "";
-            skillsInput.value = "";
-            emailInput.value = "";
-            isEnrolledCheckBox.checked = false
-        });
-    });
+
+        await addDataApi(newStudent);
+
+        nameInput.value = "";
+        ageInput.value = "";
+        courseInput.value = "";
+        skillsInput.value = "";
+        emailInput.value = "";
+        isEnrolledCheckBox.checked = false;
+
+        const updatedStudents = await getStudents();
+        renderStudents(updatedStudents);
+    } catch (error) {
+        console.log("addStudent:", error.message);
+    }
 }
 
 addStudentForm.addEventListener("submit", e => {
@@ -89,23 +91,27 @@ addStudentForm.addEventListener("submit", e => {
     addStudent();
 });
 
-// Функція для оновлення студента
 async function updateStudent(id) {
-    updateModalBackground.classList.toggle("show");
-    const students = await getStudents();
-    const foundStudent = students.find(s => s.id === id);
-    nameUpInput.value = foundStudent.name;
-    ageUpInput.value = Number(foundStudent.age);
-    courseUpInput.value = foundStudent.course;
-    skillsUpInput.value = foundStudent.skills.join(",");
-    emailUpInput.value = foundStudent.email;
-    isEnrolledUpInput.checked = foundStudent.isEnrolled;
+    try {
+        updateModalBackground.classList.toggle("show");
+        const students = await getStudents();
+        const foundStudent = students.find(s => s.id === id);
+        nameUpInput.value = foundStudent.name;
+        ageUpInput.value = foundStudent.age;
+        courseUpInput.value = foundStudent.course;
+        skillsUpInput.value = foundStudent.skills.join(",");
+        emailUpInput.value = foundStudent.email;
+        isEnrolledUpInput.checked = foundStudent.isEnrolled;
+    } catch (error) {
+        console.log("updateStudent:", error.message);
+    }
+};
 
-    updateStudentForm.addEventListener("submit", async e => {
-        e.preventDefault();
-        
+updateStudentForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+        const id = updateStudentForm.dataset.updateId;
         const newInfo = {
-            id: foundStudent.id,
             name: nameUpInput.value,
             age: Number(ageUpInput.value),
             course: courseUpInput.value,
@@ -113,15 +119,27 @@ async function updateStudent(id) {
             email: emailUpInput.value,
             isEnrolled: isEnrolledUpInput.checked
         };
-        updateModalBackground.classList.toggle("show");
-        return await updateDataApi(id, newInfo);
-    });
-};
 
-// Функція для видалення студента
-function deleteStudent(id) {
-    return deleteDataApi(id)
-};
+        await updateDataApi(id, newInfo);
+        updateModalBackground.classList.toggle("show");
+
+        const updatedStudents = await getStudents();
+        renderStudents(updatedStudents);
+        updateStudentForm.removeAttribute("data-update-id");
+    } catch (error) {
+        console.log("updateStudentForm form:", error.message);
+    }
+});
+
+async function deleteStudent(id) {
+    try {
+        await deleteDataApi(id);
+        const updatedStudents = await getStudents();
+        renderStudents(updatedStudents);
+    } catch (error) {
+        console.log("deleteStudent:", error.message);
+    }
+}
 
 studentsTableBody.addEventListener("click", async e => {
     e.preventDefault();
@@ -130,6 +148,7 @@ studentsTableBody.addEventListener("click", async e => {
             deleteStudent(e.target.dataset.deleteId);
         }
         if (e.target.dataset.updateId) {
+            updateStudentForm.dataset.updateId = e.target.dataset.updateId;
             updateStudent(e.target.dataset.updateId);
         }
     }

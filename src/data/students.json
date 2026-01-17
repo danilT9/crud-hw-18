@@ -52,17 +52,29 @@
       "isEnrolled": true
     },
     {
-      "id": "5",
       "name": "Mykola Bondarenko",
       "age": 15,
       "course": "Cybersecurity",
       "skills": [
         "Networking",
-        "Ethical Hacking",
-        "Linux"
+        " Ethical Hacking",
+        " Linux"
       ],
       "email": "mykola.bondarenko@example.com",
-      "isEnrolled": false
+      "isEnrolled": false,
+      "id": "5"
+    },
+    {
+      "name": "Qwe",
+      "age": 123,
+      "course": "Backend",
+      "skills": [
+        "Rust",
+        "Backend"
+      ],
+      "email": "qwe@example.com",
+      "isEnrolled": true,
+      "id": "6"
     }
   ]
 }
