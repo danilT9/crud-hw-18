@@ -1,0 +1,24 @@
+{
+  "name": "crud-hw-18",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "scripts": {
+    "start": "parcel serve ./src/index.html",
+    "build": "parcel build ./src/index.html --no-cache --public-url ./",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist",
+    "re": "npm run predeploy && git add . && git commit -m main && git push origin main && npm run deploy"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0",
+    "handlebars": "^4.7.8",
+    "parcel": "^2.16.3",
+    "parcel-reporter-clean-dist": "^1.0.4"
+  },
+  "dependencies": {
+    "json-server": "^1.0.0-beta.3"
+  }
+}
